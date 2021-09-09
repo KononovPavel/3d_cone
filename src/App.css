@@ -16,6 +16,11 @@
     flex-direction: column;
     justify-content: space-between;
     position: fixed;
-    top: 62px;
+    top: 130px;
+    left: 60px;
+}
+.select{
+    position: fixed;
+    top: 50px;
     left: 60px;
 }
