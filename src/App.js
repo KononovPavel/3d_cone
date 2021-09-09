@@ -7,7 +7,7 @@ function App() {
     const [SmallRadius, setSmallRadius] = useState('')
     const [height, setHeight] = useState('');
     const [n, setN] = useState('');
-    const [active, setActive] = useState(false)//??
+    const [activeCord, setActiveCord] = useState(false)//?? переключалка между двумя видами
     const [action, setAction] = useState(options[0])
     const [errorText, setErrorText] = useState(false)
     const [errorRadius, setErrorRadius] = useState(false)
@@ -133,6 +133,7 @@ function App() {
             }, 2000)
             return;
         }
+        if (height >= 300) return;
 
         count++;
         let canvas = document.getElementById("canvas");
@@ -165,9 +166,6 @@ function App() {
             )
             alpha += 360 / nCallback
         }
-        console.log(BigCircle)
-        console.log(SmallCircle)
-
         //рисуем круги
 
         //большой круг
@@ -203,7 +201,7 @@ function App() {
         }
 
 
-        //отрисовка маленького круга
+        //отрисовка маленького круга синей линией, типо как внутренняя часть
         for (let i = 0; i < SmallCircle.points.length - 1; i++) {
             context.beginPath();
             context.moveTo(startPoints[0] + 300, 300 - startPoints[1])
@@ -231,25 +229,50 @@ function App() {
         // }
         if (count === 2) return;
         drawCircles(BigRadius, SmallRadius, n, height, [0, 0, 0])
+    } // вид сверху
+
+    const drawRectangle = (height, startPoints) => {
+        let canvas = document.getElementById("canvas");
+        let context = canvas.getContext("2d");
+        context.clearRect(0, 0, canvas.width, canvas.height)
+        drawCord();
+        context.beginPath()
+        for (let i = 0; i < BigCircle.points.length/2; i++) {
+            context.moveTo(300 + startPoints[0],300 - startPoints[2]);
+            context.lineTo(BigCircle.points[i].X, 300-height);
+            context.lineTo(BigCircle.points[i + 1].X, 300-height);
+            context.closePath();
+            context.strokeStyle = "red";
+            context.lineWidth = 0.5;
+            context.stroke();
+        }
     }
 
     const onClickEnterHandler = (e) => {
-        if (e.key ==='Enter') {
+        if (e.key === 'Enter') {
             drawCircles(BigRadius, SmallRadius, n, height, [0, 0, 0])
             e.preventDefault();
             e.stopPropagation();
         }
     }
 
-const mappesOptions = options.map(option=> <option value={option}>{option}</option>)
+    const mappesOptions = options.map(option => <option key={option} value={option}>{option}</option>)
     return (
 
         <React.Fragment>
             <div className={'select'}>
                 <span>Выберите режим работы : </span>
-                <select  value={action} onChange={(e)=>{ setAction(e.currentTarget.value); console.log(action)}}>
+                <select value={action} onChange={(e) => {
+                    setAction(e.currentTarget.value);
+                    console.log(action)
+                }}>
                     {mappesOptions}
                 </select>
+            </div>
+            <div className={'view'}>
+
+                <button onClick={() => drawCircles(BigRadius, SmallRadius, n, height, [0, 0, 0])}>Вид сверху</button>
+                <button onClick={()=> drawRectangle(height, [0,0,0])}>Вид сбоку</button>
             </div>
             <div className="App">
                 <canvas id='canvas' width={600} height={600}/>
@@ -257,7 +280,7 @@ const mappesOptions = options.map(option=> <option value={option}>{option}</opti
 
 
             {
-                action === 'draw' &&  <div className={'userForm'}>
+                action === 'draw' && <div className={'userForm'}>
                     <p>Блок отрисовки модели</p>
                     <input
                         type="number"
@@ -294,7 +317,8 @@ const mappesOptions = options.map(option=> <option value={option}>{option}</opti
                     }
                     {
                         errorRadius
-                            ? <span style={{color: 'red', marginBottom: '10px'}}>Несоответствуют параметры радиусов</span>
+                            ?
+                            <span style={{color: 'red', marginBottom: '10px'}}>Несоответствуют параметры радиусов</span>
                             : ''
                     }
                     {
@@ -310,27 +334,35 @@ const mappesOptions = options.map(option=> <option value={option}>{option}</opti
             {
                 action === 'move' && <div className={'userForm'}>
                     <p>Блок перемещения модели</p>
-                    <input type="number" placeholder={'Перемещение по оси Х'} value={moveX} onChange={e=> setMoveX(e.currentTarget.valueAsNumber)}/>
-                    <input type="number" placeholder={'Перемещение по оси Y'} value={moveY} onChange={e=> setMoveY(e.currentTarget.valueAsNumber)}/>
-                    <input type="number" placeholder={'Перемещение по оси Z'} value={moveZ} onChange={e=> setMoveZ(e.currentTarget.valueAsNumber)}/>
-                    <button onClick={()=> alert( JSON.stringify({moveX,moveY,moveZ }))}>Переместить</button>
+                    <input type="number" placeholder={'Перемещение по оси Х'} value={moveX}
+                           onChange={e => setMoveX(e.currentTarget.valueAsNumber)}/>
+                    <input type="number" placeholder={'Перемещение по оси Y'} value={moveY}
+                           onChange={e => setMoveY(e.currentTarget.valueAsNumber)}/>
+                    <input type="number" placeholder={'Перемещение по оси Z'} value={moveZ}
+                           onChange={e => setMoveZ(e.currentTarget.valueAsNumber)}/>
+                    <button onClick={() => alert(JSON.stringify({moveX, moveY, moveZ}))}>Переместить</button>
                 </div>
             }
             {
                 action === 'rotate' && <div className={'userForm'}>
                     <p>Блок поворота модели</p>
-                    <input type="number" placeholder={'Поворот относительно плоскости XY'} value={rotateXY} onChange={e=> setRotateXY(e.currentTarget.valueAsNumber)} />
-                    <input type="number"  placeholder={'Поворот относительно плоскости Z'} value={rotateZ} onChange={e=> setRotateZ(e.currentTarget.valueAsNumber)} />
-                    <button onClick={()=> alert( JSON.stringify({rotateXY,rotateZ}))}>повернуть</button>
+                    <input type="number" placeholder={'Поворот относительно плоскости XY'} value={rotateXY}
+                           onChange={e => setRotateXY(e.currentTarget.valueAsNumber)}/>
+                    <input type="number" placeholder={'Поворот относительно плоскости Z'} value={rotateZ}
+                           onChange={e => setRotateZ(e.currentTarget.valueAsNumber)}/>
+                    <button onClick={() => alert(JSON.stringify({rotateXY, rotateZ}))}>повернуть</button>
                 </div>
             }
             {
                 action === 'scale' && <div className={'userForm'}>
                     <p>Блок масштабирования модели</p>
-                    <input type="number" placeholder={'Масштаб по оси Х'} value={scaleX} onChange={e=> setScaleX(e.currentTarget.valueAsNumber)} />
-                    <input type="number" placeholder={'Масштаб по оси Y'} value={scaleY} onChange={e=> setScaleY(e.currentTarget.valueAsNumber)} />
-                    <input type="number" placeholder={'Масштаб по оси Z'} value={scaleZ} onChange={e=> setScaleZ(e.currentTarget.valueAsNumber)} />
-                    <button onClick={()=> alert( JSON.stringify({scaleX,scaleY,scaleZ }))}>отмасшабировать</button>
+                    <input type="number" placeholder={'Масштаб по оси Х'} value={scaleX}
+                           onChange={e => setScaleX(e.currentTarget.valueAsNumber)}/>
+                    <input type="number" placeholder={'Масштаб по оси Y'} value={scaleY}
+                           onChange={e => setScaleY(e.currentTarget.valueAsNumber)}/>
+                    <input type="number" placeholder={'Масштаб по оси Z'} value={scaleZ}
+                           onChange={e => setScaleZ(e.currentTarget.valueAsNumber)}/>
+                    <button onClick={() => alert(JSON.stringify({scaleX, scaleY, scaleZ}))}>отмасшабировать</button>
                 </div>
             }
 

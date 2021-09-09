@@ -24,3 +24,11 @@
     top: 50px;
     left: 60px;
 }
+.view{
+    width: 600px;
+    display: flex;
+    position: fixed;
+    top: 20px;
+    left: 420px;
+    justify-content: space-evenly;
+}
