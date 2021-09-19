@@ -20,10 +20,10 @@ function App() {
     const [scaleX, setScaleX] = useState('')
     const [scaleY, setScaleY] = useState('')
     const [scaleZ, setScaleZ] = useState('')
-
+    let axis = 'Y';
 
     useEffect(() => {
-        drawCord();
+        drawCord(axis);
     }, [])
 
     const SmallCircle = {
@@ -46,7 +46,7 @@ function App() {
     }
 
 
-    const drawCord = () => {
+    const drawCord = (axis) => {
         let canvas = document.getElementById("canvas");
         let context = canvas.getContext("2d");
         //Рисование координатных осей
@@ -66,7 +66,7 @@ function App() {
         context.moveTo(600, 300);
         context.lineTo(580, 290);
         context.font = "22px Verdana";
-        context.fillText("У", 270, 20);
+        context.fillText(axis, 270, 20);
         context.font = "22px Verdana";
         context.fillText("0", 280, 320);
         context.font = "22px Verdana";
@@ -108,10 +108,10 @@ function App() {
         context.closePath();
         context.stroke();
     }
-
     // радиус1, радиус2, аппроксимация, высота, массив координат вершины
-    let count = 0;
+    //вид спереди
     const drawCircles = (BigRadiusCallBack, SmallRadiusCallBack, nCallback, height, startPoints) => {
+        axis = 'Y'
         if (BigRadiusCallBack.toString().length === 0 || SmallRadiusCallBack.toString().length === 0 || nCallback.toString().length === 0 || height.toString().length === 0) {
             setErrorText(true)
             setTimeout(() => {
@@ -135,11 +135,10 @@ function App() {
         }
         if (height >= 300) return;
 
-        count++;
-        let canvas = document.getElementById("canvas");
-        let context = canvas.getContext("2d");
+        const canvas = document.getElementById("canvas");
+        const context = canvas.getContext("2d");
         context.clearRect(0, 0, canvas.width, canvas.height)
-        drawCord();
+        drawCord(axis);
         let alpha = 360 / nCallback;
         for (let i = 0; i < nCallback; i++) {
             //получение координат малого круга
@@ -199,6 +198,14 @@ function App() {
             context.lineWidth = 1;
             context.stroke();
         }
+        //простая отрисовка начальной и конечных точек
+        context.beginPath();
+        context.strokeStyle = "red";
+        context.moveTo(BigCircle.points[0].X, BigCircle.points[0].Y);
+        context.lineTo(BigCircle.points[BigCircle.points.length - 1].X, BigCircle.points[BigCircle.points.length - 1].Y);
+        context.closePath();
+        context.lineWidth = 1;
+        context.stroke();
 
 
         //отрисовка маленького круга синей линией, типо как внутренняя часть
@@ -208,46 +215,68 @@ function App() {
             context.lineTo(SmallCircle.points[i].X, SmallCircle.points[i].Y)
             context.lineTo(SmallCircle.points[i + 1].X, SmallCircle.points[i + 1].Y)
 
-
             context.closePath();
             context.strokeStyle = "blue";
             context.lineWidth = 0.5;
             context.stroke();
         }
-        //закраска красной линии к центру
-        // for (let i = 0; i < SmallCircle.points.length - 1; i++) {
-        //     context.beginPath();
-        //     context.moveTo(startPoints[0], startPoints[1])
-        //     context.lineTo(BigCircle.points[i].X, BigCircle.points[i].Y)
-        //     context.lineTo(BigCircle.points[i + 1].X, BigCircle.points[i + 1].Y)
-        //
-        //
-        //     context.closePath();
-        //     context.strokeStyle = "red";
-        //     context.lineWidth = 1;
-        //     context.stroke();
-        // }
-        if (count === 2) return;
-        drawCircles(BigRadius, SmallRadius, n, height, [0, 0, 0])
-    } // вид сверху
-
+        context.beginPath();
+        context.strokeStyle = "blue";
+        context.moveTo(SmallCircle.points[0].X, SmallCircle.points[0].Y);
+        context.lineTo(SmallCircle.points[SmallCircle.points.length - 1].X, SmallCircle.points[SmallCircle.points.length - 1].Y);
+        context.closePath();
+        context.lineWidth = 1;
+        context.stroke();
+    }
+    // вид сбоку
     const drawRectangle = (height, startPoints) => {
-        let canvas = document.getElementById("canvas");
-        let context = canvas.getContext("2d");
+        axis = 'Z';
+        const canvas = document.getElementById("canvas");
+        const context = canvas.getContext("2d");
         context.clearRect(0, 0, canvas.width, canvas.height)
-        drawCord();
+        drawCord(axis);
         context.beginPath()
-        for (let i = 0; i < BigCircle.points.length/2; i++) {
-            context.moveTo(300 + startPoints[0],300 - startPoints[2]);
-            context.lineTo(BigCircle.points[i].X, 300-height);
-            context.lineTo(BigCircle.points[i + 1].X, 300-height);
+        for (let i = 0; i < BigCircle.points.length / 2; i++) {
+            context.moveTo(300 + startPoints[0], 300 - startPoints[2]);
+            context.lineTo(BigCircle.points[i].X, 300 - height);
+            context.lineTo(BigCircle.points[i + 1].X, 300 - height);
             context.closePath();
             context.strokeStyle = "red";
-            context.lineWidth = 0.5;
+            context.lineWidth = 1;
             context.stroke();
         }
+        //аналогично и здесь соединяем центр с последней точкой
+        context.beginPath();
+        context.moveTo(300 + startPoints[0], 300 - startPoints[2]);
+        context.lineTo(BigCircle.points[BigCircle.points.length - 2].X, 300 - height);
+        context.lineTo(BigCircle.points[BigCircle.points.length - 1].X, 300 - height);
+        context.closePath();
+        context.strokeStyle = "red";
+        context.lineWidth = 1;
+        context.stroke();
     }
 
+    //вид сверху
+    const drawOnHigh = (height, startPoints) => {
+        axis = 'Z';
+        const canvas = document.getElementById("canvas");
+        const context = canvas.getContext("2d");
+        context.clearRect(0, 0, canvas.width, canvas.height)
+        drawCord(axis);
+        context.beginPath();
+        for (let i = 0; i < BigCircle.points.length - 1; i++) {
+            context.moveTo(300 + startPoints[0], 300 - startPoints[2]);
+            context.lineTo(BigCircle.points[i].X, 300 + height);
+            context.lineTo(BigCircle.points[i + 1].X, 300 + height);
+            context.closePath();
+            context.strokeStyle = "red";
+            context.lineWidth = 1;
+            context.stroke();
+        }
+        //соединяем крайние точки
+
+
+    }
     const onClickEnterHandler = (e) => {
         if (e.key === 'Enter') {
             drawCircles(BigRadius, SmallRadius, n, height, [0, 0, 0])
@@ -271,8 +300,9 @@ function App() {
             </div>
             <div className={'view'}>
 
-                <button onClick={() => drawCircles(BigRadius, SmallRadius, n, height, [0, 0, 0])}>Вид сверху</button>
-                <button onClick={()=> drawRectangle(height, [0,0,0])}>Вид сбоку</button>
+                <button onClick={() => drawCircles(BigRadius, SmallRadius, n, height, [0, 0, 0])}>Вид спереди</button>
+                <button onClick={() => drawRectangle(height, [0, 0, 0])}>Вид сбоку</button>
+                <button onClick={() => drawOnHigh(height, [0, 0, 0])}>вид сверху</button>
             </div>
             <div className="App">
                 <canvas id='canvas' width={600} height={600}/>
