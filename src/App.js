@@ -7,7 +7,6 @@ function App() {
     const [SmallRadius, setSmallRadius] = useState('')
     const [height, setHeight] = useState('');
     const [n, setN] = useState('');
-    const [activeCord, setActiveCord] = useState(false)//?? переключалка между двумя видами
     const [action, setAction] = useState(options[0])
     const [errorText, setErrorText] = useState(false)
     const [errorRadius, setErrorRadius] = useState(false)
@@ -25,7 +24,7 @@ function App() {
     useEffect(() => {
         drawCord(axis);
     }, [])
-
+    //наши исходные данные
     const SmallCircle = {
         points: [],
         startPoint: {
@@ -44,6 +43,7 @@ function App() {
             flat: 1
         }
     }
+    const startPoints = [0,0,0];
 
 
     const drawCord = (axis) => {
@@ -273,13 +273,38 @@ function App() {
             context.lineWidth = 1;
             context.stroke();
         }
-        //соединяем крайние точки
-
-
     }
+
+    //Logic about
+    //просто перегон из координат в матрицу
+    const getDefaultMatrix = (X, Y, Z, F) => {
+        return [X, Y, Z, F];
+    }
+    //поворот относительно X
+    const getRotateMatrixRelativeX = (angle) => {
+        return [[1, 0, 0, 0], [0, Math.cos(angle), Math.sin(angle), 0], [0, -Math.sin(angle), Math.cos(angle), 0], [0, 0, 0, 1]]
+    }
+    //поворот относительно Y
+    const getRotateMatrixRelativeY = (angle) => {
+        return [[Math.cos(angle), 0, -Math.sin(angle), 0], [0, 1, 0, 0], [Math.sin(angle), 0, Math.cos(angle), 0], [0, 0, 0, 1]]
+    }
+    //поворот относительно Z
+    const getRotateMatrixRelativeZ = (angle) => {
+        return [[Math.cos(angle), Math.sin(angle), 0, 0], [-Math.sin(angle), Math.cos(angle), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+    }
+    const getMoveMatrix = (dx, dy, dz) => {
+        return [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [dx, dy, dz, 1]];
+    }
+
+    const getScaleMatrix = (sx, sy, sz) => {
+        return [[sx, 0, 0, 0], [0, sy, 0, 0], [0, 0, sz, 0], [0, 0, 0, 1]];
+    }
+
+
+    // just work with UI
     const onClickEnterHandler = (e) => {
         if (e.key === 'Enter') {
-            drawCircles(BigRadius, SmallRadius, n, height, [0, 0, 0])
+            drawCircles(BigRadius, SmallRadius, n, height, startPoints)
             e.preventDefault();
             e.stopPropagation();
         }
@@ -300,9 +325,9 @@ function App() {
             </div>
             <div className={'view'}>
 
-                <button onClick={() => drawCircles(BigRadius, SmallRadius, n, height, [0, 0, 0])}>Вид спереди</button>
-                <button onClick={() => drawRectangle(height, [0, 0, 0])}>Вид сбоку</button>
-                <button onClick={() => drawOnHigh(height, [0, 0, 0])}>вид сверху</button>
+                <button onClick={() => drawCircles(BigRadius, SmallRadius, n, height, startPoints)}>Вид спереди</button>
+                <button onClick={() => drawRectangle(height, startPoints)}>Вид сбоку</button>
+                <button onClick={() => drawOnHigh(height, startPoints)}>вид сверху</button>
             </div>
             <div className="App">
                 <canvas id='canvas' width={600} height={600}/>
@@ -395,37 +420,6 @@ function App() {
                     <button onClick={() => alert(JSON.stringify({scaleX, scaleY, scaleZ}))}>отмасшабировать</button>
                 </div>
             }
-
-            {/* Вот тут добавить селект, где будет выбор между операциями над фигурой*/}
-            {/*    <div className={'userForm'} style={{top:'342px', left:'60px'}}>*/}
-            {/*        <p>Блок отрисовки модели</p>*/}
-            {/*        <input*/}
-            {/*            type="number"*/}
-            {/*            value={rad1}*/}
-            {/*            onChange={e=> setRad1(e.currentTarget.valueAsNumber)}*/}
-            {/*            placeholder={'Введите радиус большей окружности'}*/}
-            {/*        />*/}
-            {/*        <input*/}
-            {/*            type="number"*/}
-            {/*            value={rad2}*/}
-            {/*            onChange={e=> setRad2(e.currentTarget.valueAsNumber)}*/}
-            {/*            placeholder={'Введите радиус второй окружности'}*/}
-            {/*        />*/}
-            {/*        <input*/}
-            {/*            type="number"*/}
-            {/*            value={height}*/}
-            {/*            onChange={e=> setHeight(e.currentTarget.valueAsNumber)}*/}
-            {/*            placeholder={'Введите высоту конусов'}*/}
-            {/*        />*/}
-            {/*        <input*/}
-            {/*            type="number"*/}
-            {/*            value={n}*/}
-            {/*            onChange={e=> setN(e.currentTarget.valueAsNumber)}*/}
-            {/*            placeholder={'Введите глубину аппроксимации '}*/}
-            {/*        />*/}
-            {/*        <button onClick={()=> alert(JSON.stringify({rad1, rad2, height}))}> отрисовать модель </button>*/}
-            {/*    </div>*/}
-
         </React.Fragment>
     );
 }
