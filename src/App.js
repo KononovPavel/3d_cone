@@ -1,13 +1,12 @@
 import React, {useEffect, useState} from "react";
 import './App.css';
+import {multiplyMatrix, transformation} from "./Transformations/transformation";
 
 function App() {
-    const options = ['draw', 'scale', 'rotate', 'move']
     const [BigRadius, setBigRadius] = useState('');
     const [SmallRadius, setSmallRadius] = useState('')
     const [height, setHeight] = useState('');
     const [n, setN] = useState('');
-    const [action, setAction] = useState(options[0])
     const [errorText, setErrorText] = useState(false)
     const [errorRadius, setErrorRadius] = useState(false)
     const [errorApprox, setErrorApprox] = useState(false)
@@ -23,27 +22,15 @@ function App() {
 
     useEffect(() => {
         drawCord(axis);
-    }, [])
+    }, [axis])
     //наши исходные данные
-    const SmallCircle = {
+    let SmallCircle = {
         points: [],
-        startPoint: {
-            x: 0,
-            y: 0,
-            z: height,
-            flat: 1
-        }
     }
-    const BigCircle = {
+    let BigCircle = {
         points: [],
-        startPoint: {
-            x: 0,
-            y: 0,
-            z: height,
-            flat: 1
-        }
     }
-    let startPoints = [0,0,0];
+    let startPoints = [0, 0, 0];
 
 
     const drawCord = (axis) => {
@@ -229,18 +216,19 @@ function App() {
         context.stroke();
     }
     // вид сбоку
-    const drawRectangle = (height, startPoints) => {
+    const drawRectangle = ( startPoints) => {
         axis = 'Z';
-        if(errorApprox || errorText || errorRadius) return;
+        if (errorApprox || errorText || errorRadius) return;
+
         const canvas = document.getElementById("canvas");
         const context = canvas.getContext("2d");
         context.clearRect(0, 0, canvas.width, canvas.height)
         drawCord(axis);
         context.beginPath()
-        for (let i = 0; i < BigCircle.points.length / 2; i++) {
+        for (let i = 0; i < BigCircle.points.length - 1; i++) {
             context.moveTo(300 + startPoints[0], 300 - startPoints[2]);
-            context.lineTo(BigCircle.points[i].X, 300 - height);
-            context.lineTo(BigCircle.points[i + 1].X, 300 - height);
+            context.lineTo(BigCircle.points[i].X, 300 - BigCircle.points[i].Z);
+            context.lineTo(BigCircle.points[i + 1].X, 300 - BigCircle.points[i + 1].Z);
             context.closePath();
             context.strokeStyle = "red";
             context.lineWidth = 1;
@@ -249,8 +237,8 @@ function App() {
         //аналогично и здесь соединяем центр с последней точкой
         context.beginPath();
         context.moveTo(300 + startPoints[0], 300 - startPoints[2]);
-        context.lineTo(BigCircle.points[BigCircle.points.length - 2].X, 300 - height);
-        context.lineTo(BigCircle.points[BigCircle.points.length - 1].X, 300 - height);
+        context.lineTo(BigCircle.points[BigCircle.points.length - 2].X, 300 - BigCircle.points[BigCircle.points.length - 2].Z);
+        context.lineTo(BigCircle.points[BigCircle.points.length - 1].X, 300 - BigCircle.points[BigCircle.points.length - 1].Z);
         context.closePath();
         context.strokeStyle = "red";
         context.lineWidth = 1;
@@ -258,8 +246,8 @@ function App() {
     }
 
     //вид сверху
-    const drawOnHigh = (height, startPoints) => {
-        if(errorApprox || errorText || errorRadius) return;
+    const drawOnHigh = (startPoints) => {
+        if (errorApprox || errorText || errorRadius) return;
         axis = 'Z';
         const canvas = document.getElementById("canvas");
         const context = canvas.getContext("2d");
@@ -268,8 +256,8 @@ function App() {
         context.beginPath();
         for (let i = 0; i < BigCircle.points.length - 1; i++) {
             context.moveTo(300 + startPoints[0], 300 - startPoints[2]);
-            context.lineTo(BigCircle.points[i].X, 300 + height);
-            context.lineTo(BigCircle.points[i + 1].X, 300 + height);
+            context.lineTo(BigCircle.points[i].X, 300 + BigCircle.points[i].Z);
+            context.lineTo(BigCircle.points[i + 1].X, 300 + BigCircle.points[i + 1].Z);
             context.closePath();
             context.strokeStyle = "red";
             context.lineWidth = 1;
@@ -277,7 +265,28 @@ function App() {
         }
     }
 
-    // just work with UI
+    const move = (startPoints) => {
+        debugger
+            for (let i = 0; i < BigCircle.points.length - 1; i++) {
+                let B = transformation.getDefaultMatrix(BigCircle.points[i].X, BigCircle.points[i].Y, BigCircle.points[i].Z, BigCircle.points[i].F);
+                let resultBigCircle = multiplyMatrix(B, transformation.getMoveMatrix(moveX, moveY, moveZ));
+                BigCircle.points[i].X = resultBigCircle[0][0];
+                BigCircle.points[i].Y = resultBigCircle[0][1];
+                BigCircle.points[i].Z = resultBigCircle[0][2];
+                BigCircle.points[i].F = resultBigCircle[0][4];
+                console.log(BigCircle.points[i]);
+            }
+            for (let i = 0; i < SmallCircle.points.length - 1; i++) {
+                let S = transformation.getDefaultMatrix(SmallCircle.points[i].X, SmallCircle.points[i].Y, SmallCircle.points[i].Z, SmallCircle.points[i].F);
+                let resultSmallCircle = multiplyMatrix(S, transformation.getMoveMatrix(moveX, moveY, moveZ))
+                SmallCircle.points[i].X = resultSmallCircle[0][0];
+                SmallCircle.points[i].Y = resultSmallCircle[0][1];
+                SmallCircle.points[i].Z = resultSmallCircle[0][2];
+                SmallCircle.points[i].F = resultSmallCircle[0][4];
+                console.log(SmallCircle.points[i]);
+            }
+    }
+
     const onClickEnterHandler = (e) => {
         if (e.key === 'Enter') {
             drawCircles(BigRadius, SmallRadius, n, height, startPoints)
@@ -286,119 +295,98 @@ function App() {
         }
     }
 
-    const mappesOptions = options.map(option => <option key={option} value={option}>{option}</option>)
     return (
-
         <React.Fragment>
-            <div className={'select'}>
-                <span>Выберите режим работы : </span>
-                <select value={action} onChange={(e) => {
-                    setAction(e.currentTarget.value);
-                    console.log(action)
-                }}>
-                    {mappesOptions}
-                </select>
-            </div>
             <div className={'view'}>
-
                 <button onClick={() => drawCircles(BigRadius, SmallRadius, n, height, startPoints)}>Вид спереди</button>
-                <button onClick={() => drawRectangle(height, startPoints)}>Вид сбоку</button>
-                <button onClick={() => drawOnHigh(height, startPoints)}>вид сверху</button>
+                <button onClick={() => drawRectangle(startPoints)}>Вид сбоку</button>
+                <button onClick={() => drawOnHigh(startPoints)}>вид сверху</button>
             </div>
             <div className="App">
                 <canvas id='canvas' width={600} height={600}/>
             </div>
+            <div className={'userForm'}>
+                <p>Блок отрисовки модели</p>
+                <input
+                    type="number"
+                    value={BigRadius}
+                    onChange={e => setBigRadius(e.currentTarget.valueAsNumber)}
+                    placeholder={'Введите радиус большей окружности'}
+                    onKeyPress={onClickEnterHandler}
+                />
+                <input
+                    type="number"
+                    value={SmallRadius}
+                    onChange={e => setSmallRadius(e.currentTarget.valueAsNumber)}
+                    placeholder={'Введите радиус меньшей окружности'}
+                    onKeyPress={onClickEnterHandler}
+                />
+                <input
+                    type="number"
+                    value={height}
+                    onChange={e => setHeight(e.currentTarget.valueAsNumber)}
+                    placeholder={'Введите высоту конусов'}
+                    onKeyPress={e => onClickEnterHandler(e)}
+                />
+                <input
+                    type="number"
+                    value={n}
+                    onChange={e => setN(e.currentTarget.valueAsNumber)}
+                    placeholder={'Введите глубину аппроксимации '}
+                    onKeyPress={onClickEnterHandler}
+                />
+                {
+                    errorText
+                        ? <span style={{color: 'red', marginBottom: '10px'}}>Упс, но вы что то не ввели....</span>
+                        : ''
+                }
+                {
+                    errorRadius
+                        ?
+                        <span style={{color: 'red', marginBottom: '10px'}}>Несоответствуют параметры радиусов</span>
+                        : ''
+                }
+                {
+                    errorApprox
+                        ? <span style={{color: 'red', marginBottom: '10px'}}>Недопустимо значение глубины аппроксимации равной {n}</span>
+                        : ''
+                }
+                <button onClick={() => drawCircles(BigRadius, SmallRadius, n, height, [0, 0, 0])}> отрисовать модель
+                </button>
 
+            </div>
 
-            {
-                action === 'draw' && <div className={'userForm'}>
-                    <p>Блок отрисовки модели</p>
-                    <input
-                        type="number"
-                        value={BigRadius}
-                        onChange={e => setBigRadius(e.currentTarget.valueAsNumber)}
-                        placeholder={'Введите радиус большей окружности'}
-                        onKeyPress={onClickEnterHandler}
-                    />
-                    <input
-                        type="number"
-                        value={SmallRadius}
-                        onChange={e => setSmallRadius(e.currentTarget.valueAsNumber)}
-                        placeholder={'Введите радиус меньшей окружности'}
-                        onKeyPress={onClickEnterHandler}
-                    />
-                    <input
-                        type="number"
-                        value={height}
-                        onChange={e => setHeight(e.currentTarget.valueAsNumber)}
-                        placeholder={'Введите высоту конусов'}
-                        onKeyPress={e => onClickEnterHandler(e)}
-                    />
-                    <input
-                        type="number"
-                        value={n}
-                        onChange={e => setN(e.currentTarget.valueAsNumber)}
-                        placeholder={'Введите глубину аппроксимации '}
-                        onKeyPress={onClickEnterHandler}
-                    />
-                    {
-                        errorText
-                            ? <span style={{color: 'red', marginBottom: '10px'}}>Упс, но вы что то не ввели....</span>
-                            : ''
-                    }
-                    {
-                        errorRadius
-                            ?
-                            <span style={{color: 'red', marginBottom: '10px'}}>Несоответствуют параметры радиусов</span>
-                            : ''
-                    }
-                    {
-                        errorApprox
-                            ? <span style={{color: 'red', marginBottom: '10px'}}>Недопустимо значение глубины аппроксимации равной {n}</span>
-                            : ''
-                    }
-                    <button onClick={() => drawCircles(BigRadius, SmallRadius, n, height, [0, 0, 0])}> отрисовать модель
-                    </button>
+            <div className={'userFormMove'}>
+                <p>Блок перемещения модели</p>
+                <input type="number" placeholder={'Перемещение по оси Х'} value={moveX}
+                       onChange={e => setMoveX(e.currentTarget.valueAsNumber)}/>
+                <input type="number" placeholder={'Перемещение по оси Y'} value={moveY}
+                       onChange={e => setMoveY(e.currentTarget.valueAsNumber)}/>
+                <input type="number" placeholder={'Перемещение по оси Z'} value={moveZ}
+                       onChange={e => setMoveZ(e.currentTarget.valueAsNumber)}/>
+                <button onClick={() => move(startPoints)}>Переместить</button>
+            </div>
 
-                </div>
-            }
-            {
-                action === 'move' && <div className={'userForm'}>
-                    <p>Блок перемещения модели</p>
-                    <input type="number" placeholder={'Перемещение по оси Х'} value={moveX}
-                           onChange={e => setMoveX(e.currentTarget.valueAsNumber)}/>
-                    <input type="number" placeholder={'Перемещение по оси Y'} value={moveY}
-                           onChange={e => setMoveY(e.currentTarget.valueAsNumber)}/>
-                    <input type="number" placeholder={'Перемещение по оси Z'} value={moveZ}
-                           onChange={e => setMoveZ(e.currentTarget.valueAsNumber)}/>
-                    <button onClick={() => alert(JSON.stringify({moveX, moveY, moveZ}))}>Переместить</button>
-                </div>
-            }
-            {
-                action === 'rotate' && <div className={'userForm'}>
-                    <p>Блок поворота модели</p>
-                    <input type="number" placeholder={'Поворот относительно плоскости XY'} value={rotateXY}
-                           onChange={e => setRotateXY(e.currentTarget.valueAsNumber)}/>
-                    <input type="number" placeholder={'Поворот относительно плоскости Z'} value={rotateZ}
-                           onChange={e => setRotateZ(e.currentTarget.valueAsNumber)}/>
-                    <button onClick={() => alert(JSON.stringify({rotateXY, rotateZ}))}>повернуть</button>
-                </div>
-            }
-            {
-                action === 'scale' && <div className={'userForm'}>
-                    <p>Блок масштабирования модели</p>
-                    <input type="number" placeholder={'Масштаб по оси Х'} value={scaleX}
-                           onChange={e => setScaleX(e.currentTarget.valueAsNumber)}/>
-                    <input type="number" placeholder={'Масштаб по оси Y'} value={scaleY}
-                           onChange={e => setScaleY(e.currentTarget.valueAsNumber)}/>
-                    <input type="number" placeholder={'Масштаб по оси Z'} value={scaleZ}
-                           onChange={e => setScaleZ(e.currentTarget.valueAsNumber)}/>
-                    <button onClick={() => alert(JSON.stringify({scaleX, scaleY, scaleZ}))}>отмасшабировать</button>
-                </div>
-            }
+            <div className={'userFormRotate'}>
+            <p>Блок поворота модели</p>
+            <input type="number" placeholder={'Поворот относительно плоскости XY'} value={rotateXY}
+                   onChange={e => setRotateXY(e.currentTarget.valueAsNumber)}/>
+            <input type="number" placeholder={'Поворот относительно плоскости Z'} value={rotateZ}
+                   onChange={e => setRotateZ(e.currentTarget.valueAsNumber)}/>
+            <button onClick={() => alert(JSON.stringify({rotateXY, rotateZ}))}>повернуть</button>
+        </div>
+
+            <div className={'userFormScale'}>
+                <p>Блок масштабирования модели</p>
+                <input type="number" placeholder={'Масштаб по оси Х'} value={scaleX}
+                       onChange={e => setScaleX(e.currentTarget.valueAsNumber)}/>
+                <input type="number" placeholder={'Масштаб по оси Y'} value={scaleY}
+                       onChange={e => setScaleY(e.currentTarget.valueAsNumber)}/>
+                <input type="number" placeholder={'Масштаб по оси Z'} value={scaleZ}
+                       onChange={e => setScaleZ(e.currentTarget.valueAsNumber)}/>
+                <button onClick={() => alert(JSON.stringify({scaleX, scaleY, scaleZ}))}>отмасшабировать</button>
+            </div>
         </React.Fragment>
     );
 }
-
-
 export default App;

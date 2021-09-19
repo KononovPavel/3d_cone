@@ -16,7 +16,7 @@
     flex-direction: column;
     justify-content: space-between;
     position: fixed;
-    top: 130px;
+    top: 20px;
     left: 60px;
 }
 .select{
@@ -32,3 +32,34 @@
     left: 420px;
     justify-content: space-evenly;
 }
+.userFormMove{
+    width: 300px;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: fixed;
+    top: 450px;
+    left: 60px;
+}
+.userFormRotate{
+    width: 300px;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: fixed;
+    top: 450px;
+    left: 1080px;
+}
+.userFormScale{
+    width: 300px;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: fixed;
+    top: 20px;
+    left: 1080px;
+}
+
