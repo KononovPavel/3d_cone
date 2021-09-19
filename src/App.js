@@ -43,7 +43,7 @@ function App() {
             flat: 1
         }
     }
-    const startPoints = [0,0,0];
+    let startPoints = [0,0,0];
 
 
     const drawCord = (axis) => {
@@ -231,6 +231,7 @@ function App() {
     // вид сбоку
     const drawRectangle = (height, startPoints) => {
         axis = 'Z';
+        if(errorApprox || errorText || errorRadius) return;
         const canvas = document.getElementById("canvas");
         const context = canvas.getContext("2d");
         context.clearRect(0, 0, canvas.width, canvas.height)
@@ -258,6 +259,7 @@ function App() {
 
     //вид сверху
     const drawOnHigh = (height, startPoints) => {
+        if(errorApprox || errorText || errorRadius) return;
         axis = 'Z';
         const canvas = document.getElementById("canvas");
         const context = canvas.getContext("2d");
@@ -274,32 +276,6 @@ function App() {
             context.stroke();
         }
     }
-
-    //Logic about
-    //просто перегон из координат в матрицу
-    const getDefaultMatrix = (X, Y, Z, F) => {
-        return [X, Y, Z, F];
-    }
-    //поворот относительно X
-    const getRotateMatrixRelativeX = (angle) => {
-        return [[1, 0, 0, 0], [0, Math.cos(angle), Math.sin(angle), 0], [0, -Math.sin(angle), Math.cos(angle), 0], [0, 0, 0, 1]]
-    }
-    //поворот относительно Y
-    const getRotateMatrixRelativeY = (angle) => {
-        return [[Math.cos(angle), 0, -Math.sin(angle), 0], [0, 1, 0, 0], [Math.sin(angle), 0, Math.cos(angle), 0], [0, 0, 0, 1]]
-    }
-    //поворот относительно Z
-    const getRotateMatrixRelativeZ = (angle) => {
-        return [[Math.cos(angle), Math.sin(angle), 0, 0], [-Math.sin(angle), Math.cos(angle), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
-    }
-    const getMoveMatrix = (dx, dy, dz) => {
-        return [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [dx, dy, dz, 1]];
-    }
-
-    const getScaleMatrix = (sx, sy, sz) => {
-        return [[sx, 0, 0, 0], [0, sy, 0, 0], [0, 0, sz, 0], [0, 0, 0, 1]];
-    }
-
 
     // just work with UI
     const onClickEnterHandler = (e) => {
