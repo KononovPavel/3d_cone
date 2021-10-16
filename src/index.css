@@ -52,3 +52,28 @@ p{
     font-family: 'Roboto', sans-serif;
     border-bottom: 1px solid;
 }
+
+.main-block {
+    display: flex;
+    justify-content: space-between;
+}
+
+.left div {
+    margin-left: 1rem;
+}
+
+.right div {
+    margin-right: 1rem;
+}
+
+.form div {
+    margin-top: 1rem;
+}
+
+.form label {
+    margin-left: 1rem;
+}
+
+.draw-btn {
+    background-color: red;
+}
