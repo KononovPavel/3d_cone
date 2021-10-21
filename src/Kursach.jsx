@@ -80,7 +80,7 @@ export class Kursach extends Component {
         points = [...smallPoints, ...bigPoints];
         return points;
     }
-
+    //видовое преобразование 23 страница методички- изменение положения взгляда
     getVMatrix() {
         let p = this.state.p;
         let psi = this.state.psi * Math.PI / 180;
@@ -92,28 +92,17 @@ export class Kursach extends Component {
             [0, Math.sin(psi), -Math.cos(psi), 0],
             [0, 0, p, 1]];
     }
-
-    getPerspectiveMatrix() {
-        let d = this.state.d;
-
-        return [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, 1/d],
-            [0, 0, 0, 1]];
-    }
-
+    //косоугольная матрица
     getObliqueMatrix() {
         let alpha = this.state.alpha * Math.PI / 180;
         let l = this.state.l;
-
         return [
             [1, 0, 0, 0],
             [0, 1, 0, 0],
-            [l * Math.cos(alpha), l * Math.sin(alpha), 1, 0],
+            [l * Math.cos(alpha), l * Math.sin(alpha), 1, 0], // 1 - z умирает
             [0, 0, 0, 1]];
     }
-
+    //аксонометрическая матрица
     getAxonometricMatrix() {
         let psi = this.state.psi * Math.PI / 180;
         let fi = this.state.fi * Math.PI / 180;
@@ -123,30 +112,6 @@ export class Kursach extends Component {
             [0, Math.cos(fi), 0, 0],
             [Math.sin(psi), -Math.sin(fi) * Math.cos(psi), 1, 0],
             [0, 0, 0, 1]];
-    }
-
-
-    changePoint(e, item, index) {
-        let value = e.target.value
-        if (item === 'x') {
-            this.setState(state => {
-                return {
-                    points: state.points.map((item, i) => i === index ? { ...item, x: Number(value) } : item)
-                }
-            })
-        } else if (item === 'y') {
-            this.setState(state => {
-                return {
-                    points: state.points.map((item, i) => i === index ? { ...item, y: Number(value) } : item)
-                }
-            })
-        } else {
-            this.setState(state => {
-                return {
-                    points: state.points.map((item, i) => i === index ? { ...item, z: Number(value) } : item)
-                }
-            })
-        }
     }
 
     drawCoord() {
@@ -187,15 +152,7 @@ export class Kursach extends Component {
         ctx.closePath();
     }
 
-    inBorder(x, y, xS, xE, yS, yE) {
-        var myCanvas = document.getElementById("my_canvas");
-        var ctx = myCanvas.getContext("2d");
-        let d = ctx.getImageData(x + 2, y - 2, 1, 1).data;
-        let rgb = `rgb(${d[0]},${d[1]},${d[2]})`;
-        console.log(rgb, x, y, rgb !== "rgb(0,0,255)")
-        return rgb != "rgb(0,0,255)" && x < xE && x >= xS && y <= yE && y > yS;
-    }
-
+    // получение центральной точки у грани
     getCentralPoint(edge) {
         let point1 = edge[0].lineStart;
         let point2 = edge[0].lineEnd;
@@ -217,7 +174,7 @@ export class Kursach extends Component {
             }
         }
     }
-
+    //получение нормали к плоскости, координаты вычисляются
     getNormal(edge) {
         let point1 = edge[0].lineStart;
         let point2 = edge[0].lineEnd;
@@ -232,15 +189,16 @@ export class Kursach extends Component {
             x: x, y: y, z: z
         }
     }
-
+    //получение косинуса по
     getCos(a, b) {
+        //для вычисления косинуса по формулам с листика
         let ab = a.x * b.x + a.y * b.y + a.z * b.z;
         let aLength = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
         let bLength = Math.sqrt(b.x * b.x + b.y * b.y + b.z * b.z);
         let cos = ab === 0 ? 0 : ab / (aLength * bLength);
         return cos
     }
-
+    //получение угла для отрисовки линии
     getAngle(edge) {
         let centralPoint = this.getCentralPoint(edge);
         let normal = this.getNormal(edge);
@@ -254,7 +212,7 @@ export class Kursach extends Component {
         let angle = Math.acos(cos) * (180 / Math.PI);
         return angle;
     }
-
+    //возвращает число в байтовом значении 0 - ....    55страница
     getBrightness(edge, il, kl, ia, ka) {
         let centralPoint = this.getCentralPoint(edge);
         let normal = this.getNormal(edge);
@@ -267,7 +225,7 @@ export class Kursach extends Component {
         let brightness = il * kl + ia * ka * cos;
         return this.numberToByte(brightness);
     }
-
+        // для яркости из за rgb, нужно переводить число в байты (ctr c -> ctr v)
     numberToByte(x) {
         let bytes = [];
         let i = 8;
@@ -299,8 +257,9 @@ export class Kursach extends Component {
                 lineStart: points[i + 1], lineEnd: points[i]
             }
             edges.push([line1, line2, line3])
-            edges[edges.length - 1].internal = true; // в душе не ебу как к конструкции на строчку выше сразу запихать это поле, так что таким костылем
+            edges[edges.length - 1].internal = true; // внутренний конус треугольники
         }
+        //костыль для внутренней
         let line1 = {
             lineStart: points[approximationDegree], lineEnd: top
         }
@@ -312,6 +271,7 @@ export class Kursach extends Component {
         }
         edges.push([line1, line2, line3])
         edges[edges.length - 1].internal = true;
+        //внешние треугольники
         for (let i = approximationDegree + 1; i < approximationDegree * 2; i++) {
             let line1 = {
                 lineStart: points[i], lineEnd: top
@@ -324,6 +284,7 @@ export class Kursach extends Component {
             }
             edges.push([line1, line2, line3])
         }
+        //костыль
         line1 = {
             lineStart: points[approximationDegree * 2], lineEnd: top
         }
@@ -334,6 +295,7 @@ export class Kursach extends Component {
             lineStart: points[approximationDegree + 1], lineEnd: points[approximationDegree * 2]
         }
         edges.push([line1, line2, line3])
+        //трапеции
         for (let i = 1; i < approximationDegree; i++) {
             let line1 = {
                 lineStart: points[i], lineEnd: points[i + approximationDegree]
@@ -363,18 +325,18 @@ export class Kursach extends Component {
         }
         edges.push([line1, line2, line3, line4])
         
-        // что-то типа з буфера
-        edges.sort((edgeA, edgeB) => {
-            let za = this.getCentralPoint(edgeA).z
-            let zb = this.getCentralPoint(edgeB).z
-            if (za > zb) {
-                return 1;
-            }
-            if (za < zb) {
-                return -1;
-            }
-            return 0;
-        })
+        //z-буфер
+        // edges.sort((edgeA, edgeB) => {
+        //     let za = this.getCentralPoint(edgeA).z
+        //     let zb = this.getCentralPoint(edgeB).z
+        //     if (za > zb) {
+        //         return 1;
+        //     }
+        //     if (za < zb) {
+        //         return -1;
+        //     }
+        //     return 0;
+        // })
         edges.forEach((edge, key) => {
             let angle = this.getAngle(edge);
             edge.brightness = this.getBrightness(edge, 128, 1, 127, 1);
@@ -398,6 +360,7 @@ export class Kursach extends Component {
                 }
             }
             ctx.strokeStyle = `rgb(${Math.floor(edge.brightness)},${Math.floor(edge.brightness)},${Math.floor(edge.brightness)})`;
+            //внутренняя часть
             if (edge.internal) {
                 ctx.strokeStyle = `rgb(255,0,0)`;
             }
@@ -408,22 +371,23 @@ export class Kursach extends Component {
                 ctx.fillStyle = `rgb(0,0,${Math.floor(edge.brightness)})`;
             }
             ctx.fill();
-            ctx.beginPath();
-            let abc = this.getCentralPoint(edge);
-            ctx.moveTo(abc.x + 500, -abc.y + 500);
-            ctx.lineTo(abc.x + 501, -abc.y + 501);
-            ctx.strokeStyle = `rgb(0,255,0)`;
-            ctx.closePath();
-            ctx.stroke();
-            let cbd = this.getNormal(edge)
-            ctx.moveTo(cbd.x + 500, -cbd.y + 500);
-            ctx.lineTo(cbd.x + 501, -cbd.y + 501);
-            ctx.strokeStyle = `rgb(255,0,0)`;
-            ctx.closePath();
-            ctx.stroke();
+            //точки наши
+            // ctx.beginPath();
+            // let abc = this.getCentralPoint(edge);
+            // ctx.moveTo(abc.x + 500, -abc.y + 500);
+            // ctx.lineTo(abc.x + 501, -abc.y + 501);
+            // ctx.strokeStyle = `rgb(0,255,0)`;
+            // ctx.closePath();
+            // ctx.stroke();
+            // let cbd = this.getNormal(edge)
+            // ctx.moveTo(cbd.x + 500, -cbd.y + 500);
+            // ctx.lineTo(cbd.x + 501, -cbd.y + 501);
+            // ctx.strokeStyle = `rgb(255,0,0)`;
+            // ctx.closePath();
+            // ctx.stroke();
         })
     }
-
+    //перемещение
     move() {
         let points = []
         for (let index = 0; index < this.state.points.length; index++) {
@@ -435,7 +399,7 @@ export class Kursach extends Component {
         }
         this.setState({ points: points }, () => this.draw())
     }
-
+    //масштаб
     resize() {
         let sz = this.state.sz;
         let sy = this.state.sy;
@@ -454,7 +418,7 @@ export class Kursach extends Component {
         }
         this.setState({ points: points }, () => this.draw())
     }
-
+    //поворот
     rotate(angleX, angleY, angleZ) {
         angleX = angleX * Math.PI / 180;
         angleY = angleY * Math.PI / 180;
@@ -481,7 +445,7 @@ export class Kursach extends Component {
         }
         this.setState({ points: points }, () => this.draw())
     }
-
+    //принимаем матрицу которую нужно и делаем преобразования
     getView(func) {
         let a = func();
         let pointsBefore = this.createPoints();
@@ -497,7 +461,7 @@ export class Kursach extends Component {
         }
         this.setState({ points: points }, () => this.draw())
     }
-
+    //аксонометрическая проекция
     viewAxonometricProjection() {
         let pointsXY = this.createPoints();
         let oxonometricMatrix = this.getAxonometricMatrix();
@@ -513,7 +477,7 @@ export class Kursach extends Component {
         }
         this.setState({ points: points }, () => this.draw())
     }
-
+    //угольная проекция
     viewObliqueProjection() {
         let pointsXY = this.createPoints();
         let obliqueMatrix = this.getObliqueMatrix();
@@ -529,12 +493,11 @@ export class Kursach extends Component {
         }
         this.setState({ points: points }, () => this.draw())
     }
-
+    // перспективная проекция
     viewPerspectiveProjection() {
         let pointsXY = this.createPoints();
         let vMatrix = this.getVMatrix();
         console.log(vMatrix)
-        let perspectiveMatrix = this.getPerspectiveMatrix();
         let points = []
         for (let i = 0; i < pointsXY.length; i++) {
             let def = Transformations.getDefaultMatrix(pointsXY[i]);
@@ -592,15 +555,15 @@ export class Kursach extends Component {
                         </div>
                         
                         <div>
-                            <input type="number" onChange={(ev) => this.setState({ angleX: ev.target.value })} />
+                            <input type="number" onChange={(ev) => this.setState({ angleX: ev.target.valueAsNumber })} />
                             <label>Angle X</label>
                         </div>
                         <div>
-                            <input type="number" onChange={(ev) => this.setState({ angleY: ev.target.value })} />
+                            <input type="number" onChange={(ev) => this.setState({ angleY: ev.target.valueAsNumber })} />
                             <label>Angle Y</label>
                         </div>
                         <div>
-                            <input type="number" onChange={(ev) => this.setState({ angleZ: ev.target.value })} />
+                            <input type="number" onChange={(ev) => this.setState({ angleZ: ev.target.valueAsNumber })} />
                             <label>Angle Z</label>
                         </div>
                         <div>
@@ -608,11 +571,11 @@ export class Kursach extends Component {
                         </div>
 
                         <div>
-                            <input type="number" value={this.state.psi} onChange={(ev) => this.setState({ psi: Number(ev.target.value) })} />
+                            <input type="number" value={this.state.psi} onChange={(ev) => this.setState({ psi: ev.target.valueAsNumber })} />
                             <label>psi</label>
                         </div>
                         <div>
-                            <input type="number" value={this.state.fi} onChange={(ev) => this.setState({ fi: Number(ev.target.value) })} />
+                            <input type="number" value={this.state.fi} onChange={(ev) => this.setState({ fi: ev.target.valueAsNumber })} />
                             <label>fi</label>
                         </div>
                         <div>
@@ -620,11 +583,11 @@ export class Kursach extends Component {
                         </div>
                         
                         <div>
-                            <input type="number" value={this.state.alpha} onChange={(ev) => this.setState({ alpha: Number(ev.target.value) })} />
+                            <input type="number" value={this.state.alpha} onChange={(ev) => this.setState({ alpha: ev.target.valueAsNumber })} />
                             <label>Alpha</label>
                         </div>
                         <div>
-                            <input type="number" value={this.state.l} onChange={(ev) => this.setState({ l: Number(ev.target.value) })} />
+                            <input type="number" value={this.state.l} onChange={(ev) => this.setState({ l: ev.target.valueAsNumber })} />
                             <label>L</label>
                         </div>
                         <div>
@@ -635,19 +598,19 @@ export class Kursach extends Component {
                     <canvas id="my_canvas" width="1000" height="1000"></canvas>
                     <div className={'right form'}>
                         <div>
-                            <input type="number" value={this.state.gamma} onChange={(ev) => this.setState({ gamma: Number(ev.target.value) })} />
+                            <input type="number" value={this.state.gamma} onChange={(ev) => this.setState({ gamma: ev.target.valueAsNumber })} />
                             <label>gamma</label>
                         </div>
                         <div>
-                            <input type="number" value={this.state.psi} onChange={(ev) => this.setState({ psi: Number(ev.target.value) })} />
+                            <input type="number" value={this.state.psi} onChange={(ev) => this.setState({ psi: ev.target.valueAsNumber })} />
                             <label>psi</label>
                         </div>
                         <div>
-                            <input type="number" value={this.state.p} onChange={(ev) => this.setState({ p: Number(ev.target.value) })} />
+                            <input type="number" value={this.state.p} onChange={(ev) => this.setState({ p: ev.target.valueAsNumber })} />
                             <label>p</label>
                         </div>
                         <div>
-                            <input type="number" value={this.state.d} onChange={(ev) => this.setState({ d: Number(ev.target.value) })} />
+                            <input type="number" value={this.state.d} onChange={(ev) => this.setState({ d: ev.target.valueAsNumber })} />
                             <label>d</label>
                         </div>
                         <div>
@@ -658,7 +621,7 @@ export class Kursach extends Component {
                             <input type="number" value={this.state.viewPoint.x}
                                    onChange={(ev) =>{
                                        ev.persist();
-                                       this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, x: (ev.target.value)} }))
+                                       this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, x: (ev.target.valueAsNumber)} }))
                                    }} />
                             <label>view X</label>
                         </div>
@@ -666,7 +629,7 @@ export class Kursach extends Component {
                             <input type="number" value={this.state.viewPoint.y}
                                    onChange={(ev) =>{
                                        ev.persist();
-                                       this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, y: (ev.target.value)} }))
+                                       this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, y: (ev.target.valueAsNumber)} }))
                                    }} />
                             <label>view Y</label>
                         </div>
@@ -674,12 +637,12 @@ export class Kursach extends Component {
                             <input type="number" value={this.state.viewPoint.z}
                                    onChange={(ev) =>{
                                        ev.persist();
-                                       this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, z: (ev.target.value)} }))
+                                       this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, z: (ev.target.valueAsNumber)} }))
                                    }} />
                             <label>view Z</label>
                         </div>
                         <div>
-                            <button onClick={(e) => this.draw()}>Draw</button>
+                            <button onClick={(e) => this.draw()}>Change Distance</button>
                         </div>
 
 
@@ -687,7 +650,7 @@ export class Kursach extends Component {
                             <input type="number" value={this.state.lightPoint.x}
                                    onChange={(ev) =>{
                                        ev.persist();
-                                       this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, x: (ev.target.value)} }))
+                                       this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, x: (ev.target.valueAsNumber)} }))
                                    }} />
                             <label>light X</label> 
                         </div>
@@ -695,7 +658,7 @@ export class Kursach extends Component {
                             <input type="number" value={this.state.lightPoint.y}
                                    onChange={(ev) =>{
                                        ev.persist();
-                                       this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, y: ev.target.value} }))
+                                       this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, y: ev.target.valueAsNumber} }))
                                    }} />
                             <label>light Y</label>
                         </div>
@@ -703,16 +666,16 @@ export class Kursach extends Component {
                             <input type="number" value={this.state.lightPoint.z}
                                    onChange={(ev) =>{
                                        ev.persist();
-                                       this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, z: ev.target.value} }))
+                                       this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, z: ev.target.valueAsNumber} }))
                                    }} />
                             <label>light Z</label>
                         </div>
                         <div>
-                            <button onClick={(e) => this.draw()}>Draw</button>
+                            <button onClick={(e) => this.draw()}>Light</button>
                         </div>
 
                         <div>
-                            <input type="number" value={this.state.approximationDegree} onChange={(ev) => this.setState({ approximationDegree: Number(ev.target.value) })} />
+                            <input type="number" value={this.state.approximationDegree} onChange={(ev) => this.setState({ approximationDegree: Number(ev.target.valueAsNumber) })} />
                             <label>App. degree</label>
                         </div>
                         <div>
@@ -726,7 +689,7 @@ export class Kursach extends Component {
                         </div>
 
                         <div>
-                            <button className={'draw-btn'} onClick={(ev) => this.getView(Transformations.getProfileMatrix)}>Profive</button>
+                            <button className={'draw-btn'} onClick={(ev) => this.getView(Transformations.getProfileMatrix)}>Profile</button>
                         </div>
                     </div>
                 </div>
