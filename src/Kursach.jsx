@@ -1,4 +1,5 @@
 ﻿import React, { Component } from 'react';
+import {transformation as Transformations} from "./Transformations/transformation";
 
 export class Kursach extends Component {
     static displayName = Kursach.name;
@@ -50,71 +51,34 @@ export class Kursach extends Component {
         let smallRadius = this.state?.smallRadius ? this.state.smallRadius : 50;
         let bigRadius = this.state?.bigRadius ? this.state.bigRadius : 100;
         let height = this.state?.height ? this.state.height : 50;
-        /*const AlfaRad = (360 /approximationDegree) * (Math.PI / 180);
-        const BetaRad = (360 /approximationDegree) * (Math.PI / 180);
-        for (let outerIndex = 0; outerIndex < approximationDegree; outerIndex++) {
-            for (let innerIndex = 0; innerIndex < approximationDegree; innerIndex++) {
-                let x = (160 + 80 * Math.cos(innerIndex * AlfaRad)) * Math.cos(outerIndex * BetaRad);
-                let z = (160 + 80 * Math.cos(innerIndex * AlfaRad)) * Math.sin(outerIndex * BetaRad);
-                let y = 80 * Math.sin(innerIndex * AlfaRad);
-                points.push(
-                    { x: x, y: y, z: z }
-                )
-            }
-        }*/
 
         let alpha = 360 / approximationDegree;
         smallPoints.push(
             {
                 x: 0,
-                y: 0,
-                z: height
+                y: height,
+                z: 0
             }
         )
         for (let i = 0; i < approximationDegree; i++) {
             smallPoints.push(
                 {
                     x: smallRadius * Math.cos(Math.PI * alpha / 180),
-                    y: -smallRadius * Math.sin(Math.PI * alpha / 180),
-                    z: 0
+                    y: 0,
+                    z: smallRadius * Math.sin(Math.PI * alpha / 180)
                 }
             )
             bigPoints.push(
                 {
                     x: bigRadius * Math.cos(Math.PI * alpha / 180),
-                    y: -bigRadius * Math.sin(Math.PI * alpha / 180),
-                    z: 0
+                    y: 0,
+                    z: bigRadius * Math.sin(Math.PI * alpha / 180)
                 }
             )
             alpha += 360 / approximationDegree
         }
         points = [...smallPoints, ...bigPoints];
-        console.log(points)
         return points;
-    }
-
-    getRotateMatrixOx(angle) {
-        return [
-            [1, 0, 0, 0],
-            [0, Math.cos(angle), Math.sin(angle), 0],
-            [0, -Math.sin(angle), Math.cos(angle), 0],
-            [0, 0, 0, 1]];
-    }
-
-    getRotateMatrixOy(angle) {
-        return [
-            [Math.cos(angle), 0, -Math.sin(angle), 0],
-            [0, 1, 0, 0],
-            [Math.sin(angle), 0, Math.cos(angle), 0],
-            [0, 0, 0, 1]];
-    }
-
-    getRotateMatrixOz(angle) {
-        return [
-            [Math.cos(angle), Math.sin(angle), 0, 0],
-            [-Math.sin(angle), Math.cos(angle), 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]];
     }
 
     getVMatrix() {
@@ -127,18 +91,6 @@ export class Kursach extends Component {
             [Math.cos(theta), -Math.cos(psi) * Math.sin(theta), -Math.sin(psi) * Math.sin(theta), 0],
             [0, Math.sin(psi), -Math.cos(psi), 0],
             [0, 0, p, 1]];
-    }
-
-    getMoveMatrix(dx, dy, dz) {
-        return [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [dx, dy, dz, 1]];
-    }
-
-    getRisizeMatrix(sx, sy, sz) {
-        return [[sx, 0, 0, 0], [0, sy, 0, 0], [0, 0, sz, 0], [0, 0, 0, 1]];
-    }
-
-    getDefaultMatrix(p) {
-        return [[p.x, p.y, p.z, 1]];
     }
 
     getPerspectiveMatrix() {
@@ -475,9 +427,9 @@ export class Kursach extends Component {
     move() {
         let points = []
         for (let index = 0; index < this.state.points.length; index++) {
-            let a = this.getDefaultMatrix(this.state.points[index]);
-            let b = this.getMoveMatrix(this.state.perenosX, this.state.perenosY, this.state.perenosZ)
-            let c = this.multiplyMatrix(a, b);
+            let a = Transformations.getDefaultMatrix(this.state.points[index]);
+            let b = Transformations.getMoveMatrix(this.state.perenosX, this.state.perenosY, this.state.perenosZ)
+            let c = Transformations.multiplyMatrix(a, b);
             console.log(c)
             points.push({ x: c[0][0], y: c[0][1], z: c[0][2] })
         }
@@ -488,16 +440,16 @@ export class Kursach extends Component {
         let sz = this.state.sz;
         let sy = this.state.sy;
         let sx = this.state.sx;
-        var a = this.getMoveMatrix(-this.state.points[0].x, -this.state.points[0].y, -this.state.points[0].z);
-        var b = this.getRisizeMatrix(sx, sy, sz);
-        var c = this.getMoveMatrix(this.state.points[0].x, this.state.points[0].y, this.state.points[0].z);
-        var result = this.multiplyMatrix(this.multiplyMatrix(a, b), c);
+        var a = Transformations.getMoveMatrix(-this.state.points[0].x, -this.state.points[0].y, -this.state.points[0].z);
+        var b = Transformations.getResizeMatrix(sx, sy, sz);
+        var c = Transformations.getMoveMatrix(this.state.points[0].x, this.state.points[0].y, this.state.points[0].z);
+        var result = Transformations.multiplyMatrix(Transformations.multiplyMatrix(a, b), c);
         let points = []
         for (let i = 0; i < this.state.points.length; i++) {
             points.push({
-                x: this.multiplyMatrix(this.getDefaultMatrix(this.state.points[i]), result)[0][0],
-                y: this.multiplyMatrix(this.getDefaultMatrix(this.state.points[i]), result)[0][1],
-                z: this.multiplyMatrix(this.getDefaultMatrix(this.state.points[i]), result)[0][2],
+                x: Transformations.multiplyMatrix(Transformations.getDefaultMatrix(this.state.points[i]), result)[0][0],
+                y: Transformations.multiplyMatrix(Transformations.getDefaultMatrix(this.state.points[i]), result)[0][1],
+                z: Transformations.multiplyMatrix(Transformations.getDefaultMatrix(this.state.points[i]), result)[0][2],
             })
         }
         this.setState({ points: points }, () => this.draw())
@@ -510,19 +462,17 @@ export class Kursach extends Component {
         let x = this.state.rx;
         let y = this.state.ry;
         let z = this.state.rz;
-        var a = this.getMoveMatrix(-x, -y, -z);
-        var b = this.getRotateMatrixOy(angleY);
-        let bb = this.getRotateMatrixOx(angleX);
-        let bbb = this.getRotateMatrixOz(angleZ);
-        let rotatedMatrixes = this.multiplyMatrix(this.multiplyMatrix(b, bb), bbb);
-        var c = this.getMoveMatrix(x, y, z);
-
-        var m = this.multiplyMatrix(this.multiplyMatrix(a, rotatedMatrixes), c);
+        var a = Transformations.getMoveMatrix(-x, -y, -z);
+        var b = Transformations.getRotateMatrixOy(angleY);
+        let bb = Transformations.getRotateMatrixOx(angleX);
+        let bbb = Transformations.getRotateMatrixOz(angleZ);
+        let rotatedMatrixes = Transformations.multiplyMatrix(Transformations.multiplyMatrix(b, bb), bbb);
+        var c = Transformations.getMoveMatrix(x, y, z);
 
         let points = []
         for (let i = 0; i < this.state.points.length; i++) {
-            let def = this.getDefaultMatrix(this.state.points[i]);
-            let res = this.multiplyMatrix(this.multiplyMatrix(this.multiplyMatrix(def, a), rotatedMatrixes), c);
+            let def = Transformations.getDefaultMatrix(this.state.points[i]);
+            let res = Transformations.multiplyMatrix(Transformations.multiplyMatrix(Transformations.multiplyMatrix(def, a), rotatedMatrixes), c);
             points.push({
                 x: res[0][0],
                 y: res[0][1],
@@ -532,20 +482,20 @@ export class Kursach extends Component {
         this.setState({ points: points }, () => this.draw())
     }
 
-    multiplyMatrix(A, B) {
-        var rowsA = A.length, colsA = A[0].length,
-            rowsB = B.length, colsB = B[0].length,
-            C = [];
-        if (colsA != rowsB) return false;
-        for (var i = 0; i < rowsA; i = i + 1) C[i] = [];
-        for (var k = 0; k < colsB; k = k + 1) {
-            for (var i = 0; i < rowsA; i = i + 1) {
-                var t = 0;
-                for (var j = 0; j < rowsB; j = j + 1) t += A[i][j] * B[j][k];
-                C[i][k] = t;
-            }
+    getView(func) {
+        let a = func();
+        let pointsBefore = this.createPoints();
+        let points = []
+        for (let i = 0; i < pointsBefore.length; i++) {
+            let def = Transformations.getDefaultMatrix(pointsBefore[i]);
+            let res = Transformations.multiplyMatrix(def, a);
+            points.push({
+                x: res[0][0],
+                y: res[0][1],
+                z: -res[0][2]
+            })
         }
-        return C;
+        this.setState({ points: points }, () => this.draw())
     }
 
     viewAxonometricProjection() {
@@ -553,8 +503,8 @@ export class Kursach extends Component {
         let oxonometricMatrix = this.getAxonometricMatrix();
         let points = []
         for (let i = 0; i < pointsXY.length; i++) {
-            let def = this.getDefaultMatrix(pointsXY[i]);
-            let res = this.multiplyMatrix(def, oxonometricMatrix);
+            let def = Transformations.getDefaultMatrix(pointsXY[i]);
+            let res = Transformations.multiplyMatrix(def, oxonometricMatrix);
             points.push({
                 x: res[0][0],
                 y: res[0][1],
@@ -569,8 +519,8 @@ export class Kursach extends Component {
         let obliqueMatrix = this.getObliqueMatrix();
         let points = []
         for (let i = 0; i < pointsXY.length; i++) {
-            let def = this.getDefaultMatrix(pointsXY[i]);
-            let res = this.multiplyMatrix(def, obliqueMatrix);
+            let def = Transformations.getDefaultMatrix(pointsXY[i]);
+            let res = Transformations.multiplyMatrix(def, obliqueMatrix);
             points.push({
                 x: res[0][0],
                 y: res[0][1],
@@ -587,8 +537,8 @@ export class Kursach extends Component {
         let perspectiveMatrix = this.getPerspectiveMatrix();
         let points = []
         for (let i = 0; i < pointsXY.length; i++) {
-            let def = this.getDefaultMatrix(pointsXY[i]);
-            let res = this.multiplyMatrix(def, vMatrix);
+            let def = Transformations.getDefaultMatrix(pointsXY[i]);
+            let res = Transformations.multiplyMatrix(def, vMatrix);
             let z = Math.abs(res[0][2]);
             let d = this.state.d
             points.push({
@@ -607,105 +557,178 @@ export class Kursach extends Component {
         }
         return (
             <div>
-                <canvas id="my_canvas" width="1000" height="1000"></canvas>
-                <input type="number" value={this.state.approximationDegree} onChange={(ev) => this.setState({ approximationDegree: Number(ev.target.value) })} />
-                <label><label>Approximation degree</label></label>
-                <button onClick={(ev) => {
-                    this.setState({ points: this.createPoints() }, () => this.draw())
-                }}>Draw</button>
-                <div>
-                    <input type="number" onChange={(ev) => this.setState({ perenosX: ev.target.value })} />
-                    <label>Perenos x</label>
-                    <input type="number" onChange={(ev) => this.setState({ perenosY: ev.target.value })} />
-                    <label>Perenos y</label>
-                    <input type="number" onChange={(ev) => this.setState({ perenosZ: ev.target.value })} />
-                    <label>Perenos z</label>
-                    <button onClick={this.move.bind(this)}>Draw</button>
-                </div>
-                <div>
-                    <input type="number" onChange={(ev) => this.setState({ sx: ev.target.value })} />
-                    <label>Size x</label>
-                    <input type="number" onChange={(ev) => this.setState({ sy: ev.target.value })} />
-                    <label>Size y</label>
-                    <input type="number" onChange={(ev) => this.setState({ sz: ev.target.value })} />
-                    <label>Size z</label>
-                    <button onClick={(e) => this.resize()}>Resize</button>
-                </div>
-                <div>
-                    <input type="number" onChange={(ev) => this.setState({ angleX: ev.target.value })} />
-                    <label>AngleX</label>
-                    <input type="number" onChange={(ev) => this.setState({ angleY: ev.target.value })} />
-                    <label>AngleY</label>
-                    <input type="number" onChange={(ev) => this.setState({ angleZ: ev.target.value })} />
-                    <label>AngleZ</label>
-                    <button onClick={(e) => this.rotate(this.state.angleX, this.state.angleY, this.state.angleZ)}>Rotatte</button>
-                </div>
-                <div>
-                    <input type="number" value={this.state.psi} onChange={(ev) => this.setState({ psi: Number(ev.target.value) })} />
-                    <label>psi</label>
-                    <input type="number" value={this.state.fi} onChange={(ev) => this.setState({ fi: Number(ev.target.value) })} />
-                    <label>fi</label>
-                    <button onClick={(e) => this.viewAxonometricProjection()}>Axonometric</button>
-                </div>
-                <div>
-                    <input type="number" value={this.state.alpha} onChange={(ev) => this.setState({ alpha: Number(ev.target.value) })} />
-                    <label>alpha</label>
-                    <input type="number" value={this.state.l} onChange={(ev) => this.setState({ l: Number(ev.target.value) })} />
-                    <label>L</label>
-                    <button onClick={(e) => this.viewObliqueProjection()}>Oblique</button>
-                </div>
-                <div>
-                    <input type="number" value={this.state.gamma} onChange={(ev) => this.setState({ gamma: Number(ev.target.value) })} />
-                    <label>gamma</label>
-                    <input type="number" value={this.state.psi} onChange={(ev) => this.setState({ psi: Number(ev.target.value) })} />
-                    <label>psi</label>
-                    <input type="number" value={this.state.p} onChange={(ev) => this.setState({ p: Number(ev.target.value) })} />
-                    <label>p</label>
-                    <input type="number" value={this.state.d} onChange={(ev) => this.setState({ d: Number(ev.target.value) })} />
-                    <label>d</label>
-                    <button onClick={(e) => this.viewPerspectiveProjection()}>Perspective</button>
-                </div>
-                <div>
-                    <input type="number" value={this.state.viewPoint.x}
-                           onChange={(ev) =>{
-                               ev.persist();
-                               this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, x: (ev.target.value)} }))
-                           }} />
-                    <label>view X</label>
-                    <input type="number" value={this.state.viewPoint.y}
-                           onChange={(ev) =>{
-                               ev.persist();
-                               this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, y: (ev.target.value)} }))
-                           }} />
-                    <label>view Y</label>
-                    <input type="number" value={this.state.viewPoint.z}
-                           onChange={(ev) =>{
-                               ev.persist();
-                               this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, z: (ev.target.value)} }))
-                           }} />
-                    <label>view Z</label>
-                    <button onClick={(e) => this.draw()}>Draw</button>
-                </div>
-                <div>
-                    <input type="number" value={this.state.lightPoint.x}
-                           onChange={(ev) =>{
-                               ev.persist();
-                               this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, x: (ev.target.value)} }))
-                           }} />
-                    <label>light X</label>
-                    <input type="number" value={this.state.lightPoint.y}
-                           onChange={(ev) =>{
-                               ev.persist();
-                               this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, y: ev.target.value} }))
-                           }} />
-                    <label>light Y</label>
-                    <input type="number" value={this.state.lightPoint.z}
-                           onChange={(ev) =>{
-                               ev.persist();
-                               this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, z: ev.target.value} }))
-                           }} />
-                    <label>light Z</label>
-                    <button onClick={(e) => this.draw()}>Draw</button>
+                <div className={'main-block'}>
+                    <div className={'left form'}>
+                        <div>
+                            <input type="number" onChange={(ev) => this.setState({ perenosX: ev.target.value })} />
+                            <label>Move x</label>
+                        </div>
+                        <div>
+                            <input type="number" onChange={(ev) => this.setState({ perenosY: ev.target.value })} />
+                            <label>Move y</label>
+                        </div>
+                        <div>
+                            <input type="number" onChange={(ev) => this.setState({ perenosZ: ev.target.value })} />
+                            <label>Move z</label>
+                        </div>
+                        <div>
+                            <button onClick={this.move.bind(this)}>Move</button>
+                        </div>
+
+                        <div>
+                            <input type="number" onChange={(ev) => this.setState({ sx: ev.target.value })} />
+                            <label>Resize x</label>
+                        </div>
+                        <div>
+                            <input type="number" onChange={(ev) => this.setState({ sy: ev.target.value })} />
+                            <label>Resize y</label>
+                        </div>
+                        <div>
+                            <input type="number" onChange={(ev) => this.setState({ sz: ev.target.value })} />
+                            <label>Resize z</label>
+                        </div>
+                        <div>
+                            <button onClick={(e) => this.resize()}>Resize</button>
+                        </div>
+                        
+                        <div>
+                            <input type="number" onChange={(ev) => this.setState({ angleX: ev.target.value })} />
+                            <label>Angle X</label>
+                        </div>
+                        <div>
+                            <input type="number" onChange={(ev) => this.setState({ angleY: ev.target.value })} />
+                            <label>Angle Y</label>
+                        </div>
+                        <div>
+                            <input type="number" onChange={(ev) => this.setState({ angleZ: ev.target.value })} />
+                            <label>Angle Z</label>
+                        </div>
+                        <div>
+                            <button onClick={(e) => this.rotate(this.state.angleX, this.state.angleY, this.state.angleZ)}>Rotatte</button>
+                        </div>
+
+                        <div>
+                            <input type="number" value={this.state.psi} onChange={(ev) => this.setState({ psi: Number(ev.target.value) })} />
+                            <label>psi</label>
+                        </div>
+                        <div>
+                            <input type="number" value={this.state.fi} onChange={(ev) => this.setState({ fi: Number(ev.target.value) })} />
+                            <label>fi</label>
+                        </div>
+                        <div>
+                            <button onClick={(e) => this.viewAxonometricProjection()}>Axonometric</button>
+                        </div>
+                        
+                        <div>
+                            <input type="number" value={this.state.alpha} onChange={(ev) => this.setState({ alpha: Number(ev.target.value) })} />
+                            <label>Alpha</label>
+                        </div>
+                        <div>
+                            <input type="number" value={this.state.l} onChange={(ev) => this.setState({ l: Number(ev.target.value) })} />
+                            <label>L</label>
+                        </div>
+                        <div>
+                            <button onClick={(e) => this.viewObliqueProjection()}>Oblique</button>
+                        </div>
+                        
+                    </div>
+                    <canvas id="my_canvas" width="1000" height="1000"></canvas>
+                    <div className={'right form'}>
+                        <div>
+                            <input type="number" value={this.state.gamma} onChange={(ev) => this.setState({ gamma: Number(ev.target.value) })} />
+                            <label>gamma</label>
+                        </div>
+                        <div>
+                            <input type="number" value={this.state.psi} onChange={(ev) => this.setState({ psi: Number(ev.target.value) })} />
+                            <label>psi</label>
+                        </div>
+                        <div>
+                            <input type="number" value={this.state.p} onChange={(ev) => this.setState({ p: Number(ev.target.value) })} />
+                            <label>p</label>
+                        </div>
+                        <div>
+                            <input type="number" value={this.state.d} onChange={(ev) => this.setState({ d: Number(ev.target.value) })} />
+                            <label>d</label>
+                        </div>
+                        <div>
+                            <button onClick={(e) => this.viewPerspectiveProjection()}>Perspective</button>
+                        </div>
+
+                        <div>
+                            <input type="number" value={this.state.viewPoint.x}
+                                   onChange={(ev) =>{
+                                       ev.persist();
+                                       this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, x: (ev.target.value)} }))
+                                   }} />
+                            <label>view X</label>
+                        </div>
+                        <div>
+                            <input type="number" value={this.state.viewPoint.y}
+                                   onChange={(ev) =>{
+                                       ev.persist();
+                                       this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, y: (ev.target.value)} }))
+                                   }} />
+                            <label>view Y</label>
+                        </div>
+                        <div>
+                            <input type="number" value={this.state.viewPoint.z}
+                                   onChange={(ev) =>{
+                                       ev.persist();
+                                       this.setState(prevState => ({ viewPoint: {...prevState.viewPoint, z: (ev.target.value)} }))
+                                   }} />
+                            <label>view Z</label>
+                        </div>
+                        <div>
+                            <button onClick={(e) => this.draw()}>Draw</button>
+                        </div>
+
+
+                        <div>
+                            <input type="number" value={this.state.lightPoint.x}
+                                   onChange={(ev) =>{
+                                       ev.persist();
+                                       this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, x: (ev.target.value)} }))
+                                   }} />
+                            <label>light X</label> 
+                        </div>
+                        <div>
+                            <input type="number" value={this.state.lightPoint.y}
+                                   onChange={(ev) =>{
+                                       ev.persist();
+                                       this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, y: ev.target.value} }))
+                                   }} />
+                            <label>light Y</label>
+                        </div>
+                        <div>
+                            <input type="number" value={this.state.lightPoint.z}
+                                   onChange={(ev) =>{
+                                       ev.persist();
+                                       this.setState(prevState => ({ lightPoint: {...prevState.lightPoint, z: ev.target.value} }))
+                                   }} />
+                            <label>light Z</label>
+                        </div>
+                        <div>
+                            <button onClick={(e) => this.draw()}>Draw</button>
+                        </div>
+
+                        <div>
+                            <input type="number" value={this.state.approximationDegree} onChange={(ev) => this.setState({ approximationDegree: Number(ev.target.value) })} />
+                            <label>App. degree</label>
+                        </div>
+                        <div>
+                            <button className={'draw-btn'} onClick={(ev) => {
+                                this.setState({ points: this.createPoints() }, () => this.draw())
+                            }}>Draw</button>
+                        </div>
+                        
+                        <div>
+                            <button className={'draw-btn'} onClick={(ev) => this.getView(Transformations.getHorizontalMatrix)}>Horizontal</button>
+                        </div>
+
+                        <div>
+                            <button className={'draw-btn'} onClick={(ev) => this.getView(Transformations.getProfileMatrix)}>Profive</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
